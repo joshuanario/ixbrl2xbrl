@@ -1,0 +1,127 @@
+Copyright 2009, XBRL International Inc.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+The iXBRL processor takes a primary input file (e.g., "input.xml") and produces
+a primary output file (e.g., "output.xml"). It may also process secondary input
+documents and produce secondary output documents, as described below.
+
+
+INPUT FORMAT
+
+The primary input document must be in one of the following two formats:
+
+   1) an individual Inline XBRL Document (e.g., an XHTML doc), or
+   2) an XML doc that lists a collection of Inline XBRL Documents,
+      using the following format:
+
+        <collection>
+          <doc href="dir/part1.xhtml"/>
+          <doc href="dir/part2.xhtml"/>
+          <doc href="dir/part3.xhtml"/>
+          <doc href="dir/part4.xhtml"/>
+          ...
+        </collection>
+
+      (where each href value is the path or URI of a file in the collection).
+
+
+OUTPUT FORMAT
+
+The primary output document is the XBRL 2.1 default target document. Secondary
+target documents (identified by the "target" attribute on Inline XBRL facts) are
+additionally created in the same directory as the base output URI, using the
+following file naming convention:
+
+  <target-name>.xbrl
+
+If there is no default target document (because all Inline XBRL facts explicitly
+specify a named target), then the primary output document will be empty.
+
+
+VALIDATING vs. NON-VALIDATING PROCESSING
+
+The Inline XBRL processor does not itself perform structural schema validation.
+You're encouraged to validate your input using the W3C XML schemas provided with
+the Inline XBRL conformance suite distribution.
+
+For validation constraints that go beyond the structural constraints
+supported by W3C XML Schemas, you can validate input using the Schematron-based
+validation code found in the "validator" directory of this distribution.
+Also, the Main_xslt20.xsl wrapper stylesheet (described below) incorporates
+validation into its processing (including termination upon finding a validation
+error), effectively making this a validating Inline XBRL processor. Note, however,
+that if you use any of the other mechanisms described below, then the processor
+will not perform input validation. In that case, you can always validate in a
+separate process beforehand.
+
+
+USING AN XSLT 2.0 PROCESSOR
+
+If you're running an XSLT 2.0 processor (such as Saxon), you can invoke
+a single top-level script, named Main_xslt20.xsl, as follows:
+
+  saxon -s:input.xml -xsl:Main_xslt20.xsl -o:output/mainResult.xbrl
+
+As described above, mainResult.xbrl will consist of the default target document
+(or empty if all targets are explicit). Any secondary output documents (with
+explicit target names) will appear in the same directory as the primary
+output document, provided that you set the "base output URI" when you invoke
+the XSLT processor. For Saxon, the above command-line example effectively
+uses the "-o" option to set the base output URI. Thus, all secondary output
+documents will appear in the same "output" directory.
+
+An advantage of using this script is that it automatically invokes the
+Schematron-based input validation (imported from the inlineXBRL/validator directory).
+
+Another advantage is that relative URIs in HTML content that are to be escaped
+in the output (as dictated by escape="true" on <ix:nonNumeric>) are resolved
+even when the HTML <base> element is not included in the input. That's because
+XSLT 2.0 includes the base-uri() function for accessing the base URI of the
+document, a feature not present in XSLT 1.0.
+
+
+USING AN XSLT 1.0 PROCESSOR
+
+If you're running an XSLT 1.0 processor (such as libxslt), you can invoke a series
+of transformations as follows:
+
+  1. prepare-input.xsl
+  2. extractXBRL.xsl
+  3. split-output-documents.xsl
+
+For example, using libxslt, your script might look like this:
+
+  xsltproc prepare-input.xsl          input.xml        >stage1output.xml
+  xsltproc extractXBRL.xsl            stage1output.xml >stage2output.xml
+  xsltproc split-output-documents.xsl stage2output.xml >output.xml
+
+NOTE: The third stylesheet, split-output-documents.xsl, depends on an EXSLT
+extension for producing multiple output documents. If your processor, e.g.,
+MSXML, does not support EXSLT, then you'll need to provide another way to
+split the result of the stage 2 process into separate files.
+
+KNOWN LIMITATION OF THE XSLT 1.0 IMPLEMENTATION:
+The resolution of relative URI references in escaped HTML content
+(using the @escape attribute) depends on the presence of the XHTML
+<base> element in the input document. For URI resolution to work,
+you must include the <base> element in the XHTML input. This is not
+an issue for the 2.0 implementation (Main_xslt20.xsl).
+
+
+USING AN XSLT 1.0 PROCESSOR THAT SUPPORTS EXSLT
+
+If you're running an XSLT 1.0 processor that supports EXSLT (such as libxslt), you
+can also invoke a single top-level script, named Main_exslt.xsl, as follows:
+
+  xsltproc Main_exslt.xsl input.xml >output.xml
