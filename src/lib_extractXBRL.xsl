@@ -119,7 +119,7 @@ This stylesheet, extractXBRL.xsl, converts an Inline XBRL Document to an XBRL 2.
   exclude-result-prefixes="ix xbrli link xlink temp x">
 
   <!-- For escaping inline markup when @escape is present on ix:nonNumeric -->
-  <xsl:import href="xml-to-string.xsl"/>
+  <xsl:import href="lib_xml-to-string.xsl"/>
 
   <!-- Setting this parameter to true will prevent namespace declarations from
        ever appearing in escaped output (see hard-coded modification to xml-to-string.xsl) -->
@@ -141,7 +141,7 @@ This stylesheet, extractXBRL.xsl, converts an Inline XBRL Document to an XBRL 2.
 
 
   <!-- Includes the "resolve-uri" library template for resolving relative URIs -->
-  <xsl:include href="uri.xsl"/>
+  <xsl:include href="lib_uri.xsl"/>
 
 
   <!-- Inline XBRL Document Set root (overridden by optional controller stylesheet) -->
